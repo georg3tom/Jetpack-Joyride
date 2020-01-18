@@ -14,7 +14,7 @@ class _Getch:
     def __call__(self):
         import signal
         signal.signal(signal.SIGALRM, alarm_handler)
-        signal.setitimer(signal.ITIMER_REAL, 0.6)
+        signal.setitimer(signal.ITIMER_REAL, 0.3)
         try:
             char = self.getget()
         except TimeoutExpired:

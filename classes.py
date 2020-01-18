@@ -1,44 +1,24 @@
 import numpy as np
 import sys
 import os
+import time
 from colorama import Fore, Back, init, Style
 init()
 
-
-class Defaults:
-    """has all the default values"""
-
-    def __init__(self):
-        self.miny = 0
-        self.miny1 = 0
-        self.minx = 1
-        self.maxy = 87
-        self.maxy1 = 87
-        self.maxx = 20
-        self.maxtime = "3:00"
-        self.start = 0
-
-    def update(self, x):
-        self.maxy = self.maxy1 + x
-        self.miny = self.miny1 + x
-        self.start = x
-
-
-objdef = Defaults()
 
 
 class Person:
     """contains basic prop"""
 
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.lenx = 3
-        self.leny = 3
-        self.lives = 3
-        self.sheild = "NO"
-        self.score = 0
-        self.board = np.array(
+        self._x = x
+        self._y = y
+        self._lenx = 3
+        self._leny = 3
+        self._lives = 3
+        self._sheild = "NO"
+        self._score = 0
+        self._board = np.array(
             [[" ", "^", " "], ["*", "*", "*"], ["*", " ", "*"]])
 
     def reposition(self, x, y, obj):
@@ -84,6 +64,7 @@ class Din(Person):
         self.board = np.array(
             [[" ", "*", " "], ["*", "*", "*"], ["*", " ", "*"]])
         self.coins = 0
+        self.time = 60
 
     def col(self, x, y, obj):
         if obj.coltest[self.x + x, self.y + y] == 2 or\
@@ -103,7 +84,9 @@ class Din(Person):
     def printscore(self):
         print(Fore.CYAN, end='')
         print(
-            "LIVES:",
+            "TIME:",
+            self.time,
+            "\tLIVES:",
             self.lives,
             "\t SCORE:",
             self.score,
@@ -116,10 +99,44 @@ class Din(Person):
     def iskill(self, obj, kill=1):
         "update score and check if player is kill"
         self.score = int((objdef.start * 3 + self.coins * 40))
-        if self.lives == 0 or kill == 0:
+        self.time = 60 - int(time.time()-objdef.time)
+        if self.lives == 0 or kill == 0 or self.time<0:
             os.system('clear')
             self.printscore()
             obj.gameover()
+
+class Enemy(Person):
+    """class definition of the dragon"""
+
+    def __init__(self, x, y):
+        Person.__init__(self, x, y)
+        self.board = np.array([
+            [".", ".", ".",".", ".", ".",".",".",".","."], 
+            [".", ".", "."," ", ".", "."," ",".",".","."], 
+            [".", ".", ".",".", ".", ".",".",".",".","."], 
+            [".", ".", ".",".", " ", " ",".",".",".","."], 
+            [".", ".", "."," ", ".", "."," ",".",".","."], 
+            [" ", ".", ".",".", ".", ".",".",".","."," "], 
+            [" ", ".", ".",".", ".", ".",".",".","."," "], 
+            [" ", ".", ".",".", ".", ".",".",".","."," "], 
+            [" ", ".", ".",".", ".", ".",".",".","."," "], 
+            [".", ".", ".",".", ".", ".",".",".",".","."]
+                ])
+        self.lives = 10
+        self.lenx = 10
+        self.leny = 10 
+    def screen(self, obj):
+        Person.screen(self,obj)
+        for i in range(self.lenx):
+            for j in range(self.leny):
+                obj.coltest[self.x + i, self.y + j] = 2
+
+    def clear(self, obj):
+        Person.clear(self,obj)
+        for i in range(self.lenx):
+            for j in range(self.leny):
+                obj.coltest[self.x + i, self.y + j] = 0
+
 
 
 class Board:
@@ -135,6 +152,8 @@ class Board:
             self.board[21, i] = "#"
 
     def screen(self, start):
+        if start > 300:
+            start = 305
         objdef.update(start)
         for i in range(22):
             for j in range(90):
@@ -147,6 +166,12 @@ class Board:
                 elif self.board[i, start + j] == "*":
                     print(Fore.BLUE, end='')
                     print(Back.BLUE, end='')
+                elif self.board[i, start + j] == "✖":
+                    print(Fore.RED, end='')
+                elif self.board[i, start + j] == ".":
+                    print(Fore.GREEN, end='')
+                    print(Back.GREEN, end='')
+                    # print(Back.RED, end='')
                 elif self.board[i, start + j] == "/" or self.board[i, start + j] == "-" or self.board[i, start + j] == "|" or self.board[i, start + j] == "\\":
                     print(Fore.RED, end='')
                     # print(Back.BLUE, end='')
@@ -218,7 +243,46 @@ class Rods:
                     obj.coltest[self.x + i, self.y + j] = 2
 
     def clear(self, obj):
+        self.visibility = False
         for i in range(5):
             for j in range(5):
                 if self.board[i, j] != " ":
                     obj.board[self.x + i, self.y + j] = " "
+                    obj.coltest[self.x + i, self.y + j] = 0
+
+
+    def col(self,obj,bullet):
+        if self.visibility == False:
+            return
+        x,y=bullet.rowcol()
+        for i in range(5):
+            for j in range(5):
+                if self.board[i, j] != " " and self.x +i == x and self.y + j ==y:
+                    self.clear(obj)
+                    return 1
+
+        return 0
+        
+class Defaults:
+    """has all the default values"""
+
+    def __init__(self):
+        self.miny = 0
+        self.miny1 = 0
+        self.minx = 1
+        self.maxy = 87
+        self.maxy1 = 87
+        self.maxx = 20
+        self.maxtime = "3:00"
+        self.start = 0
+        self.time= time.time()
+
+    def update(self, x):
+        self.maxy = self.maxy1 + x
+        self.miny = self.miny1 + x
+        self.start = x
+
+
+objdef = Defaults()
+
+

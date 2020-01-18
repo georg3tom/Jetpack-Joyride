@@ -3,10 +3,11 @@ import sys
 import signal
 from colorama import init
 from input import _Getch as getch
-from classes import Board, Din, Coin, Rods
+from classes import Board, Din, Coin, Rods ,Enemy
 from random import randrange
 import time
-from defn import cls
+from defn import cls, bullet_maintainance, coin_maintainance
+from particles import Bullet
 
 
 if __name__ == "__main__":
@@ -14,11 +15,14 @@ if __name__ == "__main__":
     objboard = Board(23, 400)
     din = Din(18, 5)
     din.screen(objboard)
+    boss = Enemy(11,378)
+    boss.screen(objboard)
 
     curpos = 0
 
     coins = []
     rods = []
+    bullets = []
 
     for i in range(35):
         if i % 2 == 0:
@@ -34,9 +38,7 @@ if __name__ == "__main__":
                     4, 13), randrange(
                     i * 20, i * 20 + 10)))
 
-    for coin in coins:
-        coin.screen(objboard)
-
+    coin_maintainance(coins,objboard,din)
     for rod in rods:
         rod.screen(objboard)
 
@@ -62,29 +64,25 @@ if __name__ == "__main__":
         elif char == 'd':
             din.clear(objboard)
             din.reposition(0, 1, objboard)
-            for i in coins:
-                i.coin_col(din)
+            coin_maintainance(coins,objboard,din)
             din.reposition(0, 1, objboard)
-            for i in coins:
-                i.coin_col(din)
-            din.reposition(0, 1, objboard)
-            for i in coins:
-                i.coin_col(din)
-            din.reposition(0, 1, objboard)
+
+        elif char == 'f':
+            bullets.append(Bullet(din,objboard))
 
         din.gravity(objboard)
 
-        for i in coins:
-            i.coin_col(din)
+        coin_maintainance(coins,objboard,din)
 
-        # os.system('clear')
         if curpos < 0.5:
             os.system('clear')
 
         cls()
+        bullets = bullet_maintainance(bullets,objboard,rods)
         din.clear(objboard)
         din.screen(objboard)
         din.printscore()
+        # print(curpos)
         objboard.screen(int(curpos * 4))
         curpos = time.time() - start_time
         din.iskill(objboard)
