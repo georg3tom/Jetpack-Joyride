@@ -8,7 +8,7 @@ def bullet_maintainance(bullets,board,rods):
         for bullet in bullets:
             bullet.forward(board)
             for rod in rods:
-                if  rod.col(board,bullet) == 1:
+                if  rod.collision(board,bullet) == 1:
                     bullet.clear(board)
             if bullet.isvisible() == True:
                 tmp.append(bullet)
@@ -21,3 +21,6 @@ def coin_maintainance(coins,board,din):
         coin.coin_col(din)
     for coin in coins:
         coin.screen(board)
+
+def enemy_maintainance(boss,din,objboard):
+    boss.reposition(din.retx(),objboard)

@@ -6,14 +6,14 @@ from input import _Getch as getch
 from classes import Board, Din, Coin, Rods ,Enemy
 from random import randrange
 import time
-from defn import cls, bullet_maintainance, coin_maintainance
-from particles import Bullet
+from defn import cls, bullet_maintainance, coin_maintainance, enemy_maintainance
+from particles import Bullet, Snow
 
 
 if __name__ == "__main__":
     os.system('clear')
     objboard = Board(23, 400)
-    din = Din(18, 5)
+    din = Din(18, 10)
     din.screen(objboard)
     boss = Enemy(11,378)
     boss.screen(objboard)
@@ -23,6 +23,7 @@ if __name__ == "__main__":
     coins = []
     rods = []
     bullets = []
+    snows = []
 
     for i in range(35):
         if i % 2 == 0:
@@ -78,11 +79,12 @@ if __name__ == "__main__":
             os.system('clear')
 
         cls()
+        enemy_maintainance(boss,din,objboard)
         bullets = bullet_maintainance(bullets,objboard,rods)
         din.clear(objboard)
         din.screen(objboard)
         din.printscore()
         # print(curpos)
-        objboard.screen(int(curpos * 4))
+        objboard.screen(int(curpos*4))
         curpos = time.time() - start_time
         din.iskill(objboard)

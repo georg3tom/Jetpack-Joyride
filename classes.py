@@ -5,12 +5,11 @@ import time
 from colorama import Fore, Back, init, Style
 init()
 
-
-
 class Person:
     """contains basic prop"""
 
     def __init__(self, x, y):
+        "x = row, y = col, not to be confused with coordinates"
         self._x = x
         self._y = y
         self._lenx = 3
@@ -22,38 +21,44 @@ class Person:
             [[" ", "^", " "], ["*", "*", "*"], ["*", " ", "*"]])
 
     def reposition(self, x, y, obj):
-        if self.x + x > objdef.maxx or self.x + x < objdef.minx or self.y + \
+        if self._x + x > objdef.maxx or self._x + x < objdef.minx or self._y + \
                 y > objdef.maxy:
             return
         ret = self.col(x, y, obj)
         if ret == 1:
             return
-        self.x = self.x + x
-        self.y = self.y + y
+        self._x = self._x + x
+        self._y = self._y + y
 
     def col(self, x, y, obj):
         return 0
 
     def screen(self, obj):
-        for i in range(self.lenx):
-            for j in range(self.leny):
-                obj.board[self.x + i, self.y + j] = self.board[i, j]
+        for i in range(self._lenx):
+            for j in range(self._leny):
+                obj.board[self._x + i, self._y + j] = self._board[i, j]
 
     def clear(self, obj):
-        for i in range(self.lenx):
-            for j in range(self.leny):
-                obj.board[self.x + i, self.y + j] = " "
+        for i in range(self._lenx):
+            for j in range(self._leny):
+                obj.board[self._x + i, self._y + j] = " "
 
     def gravity(self, obj):
         "reposition if out of screen and fake gravitational effect"
-        if self.y < objdef.miny:
-            self.lives = self.lives - 1
-            self.y = self.y + 20
-            self.x = 18
-        if self.x + 3 > objdef.maxx:
+        if self._y < objdef.miny:
+            self._lives = self._lives - 1
+            self._y = self._y + 20
+            self._x = 18
+        if self._x + 3 > objdef.maxx:
             return
         self.clear(obj)
         self.reposition(1,0,obj)
+
+    def retx(self):
+        return self._x
+
+    def rety(self):
+        return self._y
 
 
 class Din(Person):
@@ -61,56 +66,59 @@ class Din(Person):
 
     def __init__(self, x, y):
         Person.__init__(self, x, y)
-        self.board = np.array(
+        self._board = np.array(
             [[" ", "*", " "], ["*", "*", "*"], ["*", " ", "*"]])
-        self.coins = 0
-        self.time = 60
+        self.__coins = 0
+        self.__time = 60
 
     def col(self, x, y, obj):
-        if obj.coltest[self.x + x, self.y + y] == 2 or\
-                obj.coltest[self.x + x, self.y + y + 1] == 2\
-                or obj.coltest[self.x + x, self.y + y + 2] == 2\
-                or obj.coltest[self.x + x + 1, self.y + y] == 2\
-                or obj.coltest[self.x + x + 1, self.y + y + 1] == \
-                2 or obj.coltest[self.x + x + 1, self.y + y + 2] \
-                == 2 or obj.coltest[self.x + x + 2, self.y + y]\
-                == 2 or obj.coltest[self.x + x + 2, self.y + y + 1]\
-                == 2 or obj.coltest[self.x + x + 2, self.y + y + 2] == 2:
-            self.lives = self.lives - 1
+        if obj.coltest[self._x + x, self._y + y] == 2 or\
+                obj.coltest[self._x + x, self._y + y + 1] == 2\
+                or obj.coltest[self._x + x, self._y + y + 2] == 2\
+                or obj.coltest[self._x + x + 1, self._y + y] == 2\
+                or obj.coltest[self._x + x + 1, self._y + y + 1] == \
+                2 or obj.coltest[self._x + x + 1, self._y + y + 2] \
+                == 2 or obj.coltest[self._x + x + 2, self._y + y]\
+                == 2 or obj.coltest[self._x + x + 2, self._y + y + 1]\
+                == 2 or obj.coltest[self._x + x + 2, self._y + y + 2] == 2:
+            self._lives = self._lives - 1
             self.iskill(obj)
-            self.x = 18
+            self._x = 18
             return 1
 
     def printscore(self):
         print(Fore.CYAN, end='')
         print(
             "TIME:",
-            self.time,
+            self.__time,
             "\tLIVES:",
-            self.lives,
+            self._lives,
             "\t SCORE:",
-            self.score,
+            self._score,
             "\t COINS:",
-            self.coins,
+            self.__coins,
             "\t SHEILD:",
-            self.sheild)
+            self._sheild)
         print(Style.RESET_ALL, end='')
 
     def iskill(self, obj, kill=1):
         "update score and check if player is kill"
-        self.score = int((objdef.start * 3 + self.coins * 40))
-        self.time = 60 - int(time.time()-objdef.time)
-        if self.lives == 0 or kill == 0 or self.time<0:
+        self._score = int((objdef.start * 3 + self.__coins * 40))
+        self._time = 60 - int(time.time()-objdef.time)
+        if self._lives == 0 or kill == 0 or self.__time<0:
             os.system('clear')
             self.printscore()
             obj.gameover()
+
+    def updatecoins(self,inc):
+        self.__coins = self.__coins + inc
 
 class Enemy(Person):
     """class definition of the dragon"""
 
     def __init__(self, x, y):
         Person.__init__(self, x, y)
-        self.board = np.array([
+        self._board = np.array([
             [".", ".", ".",".", ".", ".",".",".",".","."], 
             [".", ".", "."," ", ".", "."," ",".",".","."], 
             [".", ".", ".",".", ".", ".",".",".",".","."], 
@@ -122,20 +130,29 @@ class Enemy(Person):
             [" ", ".", ".",".", ".", ".",".",".","."," "], 
             [".", ".", ".",".", ".", ".",".",".",".","."]
                 ])
-        self.lives = 10
-        self.lenx = 10
-        self.leny = 10 
+        self._lives = 10
+        self._lenx = 10
+        self._leny = 10 
     def screen(self, obj):
         Person.screen(self,obj)
-        for i in range(self.lenx):
-            for j in range(self.leny):
-                obj.coltest[self.x + i, self.y + j] = 2
+        for i in range(self._lenx):
+            for j in range(self._leny):
+                obj.coltest[self._x + i,self._y + j] = 2
 
     def clear(self, obj):
         Person.clear(self,obj)
-        for i in range(self.lenx):
-            for j in range(self.leny):
-                obj.coltest[self.x + i, self.y + j] = 0
+        for i in range(self._lenx):
+            for j in range(self._leny):
+                obj.board[self._x + i,self._y + j] = " "
+                obj.coltest[self._x + i, self._y + j] = 0
+
+    def reposition(self,din_x,obj):
+        self.clear(obj)
+        din_x = din_x - 7
+        if din_x < 1:
+            din_x = 1
+        self._x = din_x
+        self.screen(obj)
 
 
 
@@ -145,8 +162,8 @@ class Board:
     def __init__(self, row, col):
         self.board = np.full((row, col), " ")
         self.coltest = np.full((row, col), 0)
-        self.row = row
-        self.col = col
+        self._row = row
+        self._col = col
         for i in range(col):
             self.board[0, i] = "#"
             self.board[21, i] = "#"
@@ -170,7 +187,7 @@ class Board:
                     print(Fore.RED, end='')
                 elif self.board[i, start + j] == ".":
                     print(Fore.GREEN, end='')
-                    print(Back.GREEN, end='')
+                    # print(Back.GREEN, end='')
                     # print(Back.RED, end='')
                 elif self.board[i, start + j] == "/" or self.board[i, start + j] == "-" or self.board[i, start + j] == "|" or self.board[i, start + j] == "\\":
                     print(Fore.RED, end='')
@@ -186,40 +203,41 @@ class Board:
         self.screen(objdef.start)
         sys.exit()
 
-
-class Coin:
+class Objects:
     def __init__(self, row, col):
-        self.visibility = True
-        self.row = row
-        self.col = col
+        self._visibility = True
+        self._row = row
+        self._col = col
 
     def screen(self, obj):
-        if not self.visibility:
+        if not self._visibility:
             return
-        obj.board[self.row, self.col] = ""
+        obj.board[self._row, self._col] = ""
+
+class Coin(Objects):
+    def __init__(self, row, col):
+        Objects.__init__(self,row,col)
 
     def coin_col(self, obj):
-        if not self.visibility:
+        if not self._visibility:
             return
-        if obj.x == self.row and obj.y == self.col or obj.x == self.row \
-                and obj.y + 1 == self.col or obj.x == self.row and \
-                obj.y + 2 == self.col or obj.x + 1 == self.row and \
-                obj.y == self.col or obj.x + 1 == self.row and obj.y\
-                + 1 == self.col or obj.x + 1 == self.row and obj.y +\
-                2 == self.col or obj.x + 2 == self.row and obj.y ==\
-                self.col or obj.x + 2 == self.row and obj.y + 1 == \
-                self.col or obj.x + 2 == self.row and obj.y + 2 ==\
-                self.col:
-            self.visibility = False
-            obj.coins = obj.coins + 1
+        if obj.retx() == self._row and obj.rety() == self._col or obj.retx() == self._row \
+                and obj.rety() + 1 == self._col or obj.retx() == self._row and \
+                obj.rety() + 2 == self._col or obj.retx() + 1 == self._row and \
+                obj.rety() == self._col or obj.retx() + 1 == self._row and obj.rety()\
+                + 1 == self._col or obj.retx() + 1 == self._row and obj.rety() +\
+                2 == self._col or obj.retx() + 2 == self._row and obj.rety() ==\
+                self._col or obj.retx() + 2 == self._row and obj.rety() + 1 == \
+                self._col or obj.retx() + 2 == self._row and obj.rety() + 2 ==\
+                self._col:
+            self._visibility = False
+            obj.updatecoins(1)
 
 
-class Rods:
+class Rods(Objects):
     def __init__(self, ty, row, col):
-        self.visibility = True
-        self.x = row
-        self.y = col
-        self.ty = ty
+        Objects.__init__(self,row,col)
+        self.__ty = ty
         self.board = np.array([[" ", " ", " ", " ", " "], [" ", " ", " ", " ", " "], [
                               " ", " ", " ", " ", " "], [" ", " ", " ", " ", " "], [" ", " ", " ", " ", " "]])
         if ty == 0:
@@ -239,25 +257,25 @@ class Rods:
         for i in range(5):
             for j in range(5):
                 if self.board[i, j] != " ":
-                    obj.board[self.x + i, self.y + j] = self.board[i, j]
-                    obj.coltest[self.x + i, self.y + j] = 2
+                    obj.board[self._row + i, self._col + j] = self.board[i, j]
+                    obj.coltest[self._row + i, self._col + j] = 2
 
     def clear(self, obj):
-        self.visibility = False
+        self._visibility = False
         for i in range(5):
             for j in range(5):
                 if self.board[i, j] != " ":
-                    obj.board[self.x + i, self.y + j] = " "
-                    obj.coltest[self.x + i, self.y + j] = 0
+                    obj.board[self._row + i, self._col + j] = " "
+                    obj.coltest[self._row + i, self._col + j] = 0
 
 
-    def col(self,obj,bullet):
-        if self.visibility == False:
+    def collision(self,obj,bullet):
+        if self._visibility == False:
             return
         x,y=bullet.rowcol()
         for i in range(5):
             for j in range(5):
-                if self.board[i, j] != " " and self.x +i == x and self.y + j ==y:
+                if self.board[i, j] != " " and self._row +i == x and self._col + j ==y:
                     self.clear(obj)
                     return 1
 
