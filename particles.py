@@ -1,5 +1,6 @@
 import time
 
+
 class Bullet():
     def __init__(self, din, board):
         self._x = din.retx() + 1
@@ -14,7 +15,7 @@ class Bullet():
         board[self._x, self._y] = " "
         obj.getboard(board)
         coltest = obj.retcoltest()
-        coltest[self._x,self._y] = 0
+        coltest[self._x, self._y] = 0
         obj.getcoltest(coltest)
 
     def screen(self, obj):
@@ -23,7 +24,7 @@ class Bullet():
         obj.getboard(board)
 
     def forward(self, obj):
-        if time.time() - self._start > 5:
+        if time.time() - self._start > 3:
             self.clear(obj)
         if not self._visibility:
             return
@@ -43,13 +44,13 @@ class Bullet():
 
 
 class Snow(Bullet):
-    def __init__(self, boss, board,din):
+    def __init__(self, boss, board, din):
         Bullet.__init__(self, boss, board)
         self._x = din.retx()
         self._y = boss.rety() - 1
         self._visibility = True
         coltest = board.retcoltest()
-        coltest[self._x,self._y] = 2
+        coltest[self._x, self._y] = 2
         board.getcoltest(coltest)
 
     def screen(self, obj):
@@ -57,8 +58,7 @@ class Snow(Bullet):
         board[self._x, self._y] = "۞"
         obj.getboard(board)
 
-
-    def collision(self,din):
+    def collision(self, din):
         row = din.retx()
         col = din.rety()
 
@@ -73,8 +73,8 @@ class Snow(Bullet):
             self.clear(board)
             return
         coltest = board.retcoltest()
-        coltest[self._x,self._y] = 0
-        self._y = self._y -1 
-        coltest[self._x,self._y] = 2
+        coltest[self._x, self._y] = 0
+        self._y = self._y - 1
+        coltest[self._x, self._y] = 2
         self.screen(board)
         board.getcoltest(coltest)
