@@ -14,15 +14,15 @@ class Person:
         self._y = y
         self._lenx = 3
         self._leny = 3
-        self._lives = 5
-        self._sheild = "OFF"
+        self._lives = 3
+        self._sheild = "NO"
         self._score = 0
         self._board = np.array(
             [[" ", "^", " "], ["*", "*", "*"], ["*", " ", "*"]])
 
     def reposition(self, x, y, obj):
-        if self._x + x > objdef.retmaxx() or self._x + x < objdef.retminx() or self._y + \
-                y > objdef.retmaxy():
+        if self._x + x > objdef.maxx or self._x + x < objdef.minx or self._y + \
+                y > objdef.maxy:
             return
         ret = self.col(x, y, obj)
         if ret == 1:
@@ -34,8 +34,6 @@ class Person:
         return 0
 
     def screen(self, obj):
-        if self._x > 18:
-            self._x = 18
         board = obj.retboard()
         for i in range(self._lenx):
             for j in range(self._leny):
@@ -50,11 +48,11 @@ class Person:
 
     def gravity(self, obj):
         "reposition if out of screen and fake gravitational effect"
-        if self._y < objdef.retminy():
+        if self._y < objdef.miny:
             self._lives = self._lives - 1
             self._y = self._y + 20
             self._x = 18
-        if self._x + 3 > objdef.retmaxx():
+        if self._x + 3 > objdef.maxx:
             return
         self.clear(obj)
         self.reposition(1,0,obj)
@@ -65,6 +63,7 @@ class Person:
     def rety(self):
         return self._y
 
+
 class Din(Person):
     """class definition of the protagonist"""
 
@@ -73,24 +72,10 @@ class Din(Person):
         self._board = np.array(
             [[" ", "*", " "], ["*", "*", "*"], ["*", " ", "*"]])
         self.__coins = 0
-        self.__time = 100
-        self.__sheild_time = -1
+        self.__time = 80
 
     def col(self, x, y, obj):
-        if self.issheild():
-            return 0
         coltest = obj.retcoltest()
-        if coltest[self._x + x, self._y + y] == 3 or\
-                coltest[self._x + x, self._y + y + 1] == 3\
-                or coltest[self._x + x, self._y + y + 2] == 3\
-                or coltest[self._x + x + 1, self._y + y] == 3\
-                or coltest[self._x + x + 1, self._y + y + 1] == \
-                3 or coltest[self._x + x + 1, self._y + y + 2] \
-                == 3 or coltest[self._x + x + 2, self._y + y]\
-                == 3 or coltest[self._x + x + 2, self._y + y + 1]\
-                == 3 or coltest[self._x + x + 2, self._y + y + 2] == 3:
-            return 1
-
         if coltest[self._x + x, self._y + y] == 2 or\
                 coltest[self._x + x, self._y + y + 1] == 2\
                 or coltest[self._x + x, self._y + y + 2] == 2\
@@ -102,7 +87,6 @@ class Din(Person):
                 == 2 or coltest[self._x + x + 2, self._y + y + 2] == 2:
             self._lives = self._lives - 1
             self.iskill(obj)
-            self.ssheild(2)
             self._x = 18
             return 1
         return 0 
@@ -111,31 +95,11 @@ class Din(Person):
         for i in range(k):
             self.reposition(0,1,obj)
 
-    def issheild(self):
-        if self._sheild == "ON":
-            return True
-        return False
-
-    def ssheild(self,x=0):
-        if x==2:
-            self.__sheild_time = -1
-            x=1
-        if x==1:
-            if time.time()-self.__sheild_time > 5:
-                self._sheild = "ON"
-                self.__sheild_time = time.time()
-                return
-        if self.issheild() and time.time() - self.__sheild_time >5:
-            self.__sheild_time = time.time()
-            self._sheild = "OFF"
-
     def printscore(self):
-        tmp = int(self.__time / 60)
-        prtime = str(tmp) + ":" + str(self.__time-(tmp*60))
         print(Fore.CYAN, end='')
         print(
             "TIME:",
-            prtime,
+            self.__time,
             "\tLIVES:",
             self._lives,
             "\t SCORE:",
@@ -143,26 +107,23 @@ class Din(Person):
             "\t COINS:",
             self.__coins,
             "\t SHEILD:",
-            self._sheild,"\t")
+            self._sheild)
         print(Style.RESET_ALL, end='')
 
     def iskill(self, obj, kill=1):
         "update score and check if player is kill"
-        self._score = int((objdef.retstart() * 3 + self.__coins * 40))
-        self.__time = 100 - int(time.time()-objdef.rettime())
+        self._score = int((objdef.start * 3 + self.__coins * 40))
+        self.__time = 80 - int(time.time()-objdef.time)
         if self._lives == 0 or kill == 0 or self.__time<1:
             os.system('clear')
             self.printscore()
-            obj.gameover(self)
+            obj.gameover()
 
     def updatecoins(self,inc):
         self.__coins = self.__coins + inc
 
-    def updatescore(self,val):
-        self._score = self._score + val
-
 class Enemy(Person):
-    """class definition of the creeper"""
+    """class definition of the dragon"""
 
     def __init__(self, x, y):
         Person.__init__(self, x, y)
@@ -207,10 +168,9 @@ class Enemy(Person):
                     return 1
         return 0
     
-    def gameover(self,obj,din):
+    def gameover(self,obj):
         if self._lives < 1:
-            din.updatescore(1000)
-            obj.gameover(din," YOU WIN")
+            obj.gameover(" YOU WIN")
 
     def reposition(self,din_x,obj):
         self.clear(obj)
@@ -223,7 +183,7 @@ class Enemy(Person):
 
 
 class Board:
-    """screen on which drawing is done"""
+    """description"""
 
     def __init__(self, row, col):
         self.__board = np.full((row, col), " ")
@@ -234,7 +194,7 @@ class Board:
             self.__board[0, i] = "#"
             self.__board[21, i] = "#"
 
-    def screen(self, start,din):
+    def screen(self, start):
         if start > 305:
             start = 305
         objdef.update(start)
@@ -246,15 +206,9 @@ class Board:
                 elif self.__board[i, start + j] == "":
                     print(Fore.YELLOW, end='')
                     print(Style.BRIGHT, end='')
-                elif self.__board[i, start + j] == "*" and din.issheild():
-                    print(Fore.MAGENTA, end='')
-                    print(Back.MAGENTA, end='')
                 elif self.__board[i, start + j] == "*":
                     print(Fore.BLUE, end='')
                     print(Back.BLUE, end='')
-                elif self.__board[i, start + j] == "@":
-                    print(Fore.RED, end='')
-                    print(Back.RED, end='')
                 elif self.__board[i, start + j] == "✖":
                     print(Fore.RED, end='')
                 elif self.__board[i, start + j] == ".":
@@ -267,13 +221,13 @@ class Board:
                 print(Style.RESET_ALL, end='')
             print()
 
-    def gameover(self,din,txt2=" YOU LOSE"):
+    def gameover(self,txt2=" YOU LOSE"):
         txt = "GAME OVER"
         for i in range(len(txt)):
-            self.__board[11, 40 + objdef.retstart() + i] = txt[i]
+            self.__board[11, 40 + objdef.start + i] = txt[i]
         for i in range(len(txt2)):
-            self.__board[12, 40 + objdef.retstart() + i] = txt2[i]
-        self.screen(objdef.retstart(),din)
+            self.__board[12, 40 + objdef.start + i] = txt2[i]
+        self.screen(objdef.start)
         sys.exit()
 
     def retboard(self):
@@ -289,7 +243,6 @@ class Board:
         self.__coltest = board
         
 class Objects:
-    """parent class for rods and coins"""
     def __init__(self, row, col):
         self._visibility = True
         self._row = row
@@ -303,7 +256,6 @@ class Objects:
         obj.getboard(board)
 
 class Coin(Objects):
-    """coin class"""
     def __init__(self, row, col):
         Objects.__init__(self,row,col)
 
@@ -324,7 +276,6 @@ class Coin(Objects):
 
 
 class Rods(Objects):
-    """rod class"""
     def __init__(self, ty, row, col):
         Objects.__init__(self,row,col)
         self.__ty = ty
@@ -344,8 +295,6 @@ class Rods(Objects):
                 " ", " ", "\\", " ", " "], [" ", " ", " ", "\\", " "], [" ", " ", " ", " ", "\\"]])
 
     def screen(self, obj):
-        if self._visibility == False:
-            return
         board = obj.retboard()
         coltest = obj.retcoltest()
         for i in range(5):
@@ -382,110 +331,29 @@ class Rods(Objects):
         return 0
 
 class Magnet(Objects):
-    """speedboost class"""
     def __init__(self, row, col):
         Objects.__init__(self,row,col)
-        self.__board = np.array([["@", " ", "@"], ["@", "@", "@"]])
-
-    def screen(self, obj):
-        board = obj.retboard()
-        coltest = obj.retcoltest()
-        for i in range(2):
-            for j in range(3):
-                if self.__board[i, j] != " ":
-                    board[self._row + i, self._col + j] = self.__board[i, j]
-                    coltest[self._row + i, self._col + j] = 3
-        obj.getboard(board)
-        obj.getcoltest(coltest)
-
-    def attract(self,din,objboard):
-        self.screen(objboard)
-        if din.issheild():
-            return
-        y = din.rety()
-        x = din.retx()
-        if abs(y - self._col) < 15 and x <= self._row and x +4>= self._row :
-            din.clear(objboard)
-            if y - self._col < 0:
-                din.reposition(0,1,objboard)
-                din.reposition(0,1,objboard)
-                din.reposition(0,1,objboard)
-
-            else:
-                din.reposition(0,-1,objboard)
-                din.reposition(0,-1,objboard)
-                din.reposition(0,-1,objboard)
-            
-            if x < self._row:
-                din.reposition(1,0,objboard)
-
-            elif x > self._row:
-                din.reposition(-1,0,objboard)
-
+        self.__board = np.array([["@", " ", "@"], ["@", " ", " @"]])
     
-class Speedb(Objects):
-    def __init__(self, row, col):
-        Objects.__init__(self,row,col)
-
-    def screen(self, obj):
-        if not self._visibility:
-            return
-        board = obj.retboard()
-        board[self._row, self._col] = "⧖"
-        obj.getboard(board)
-
-    def speed_col(self, obj):
-        if not self._visibility:
-            return 0
-        if obj.retx() == self._row and obj.rety() == self._col or obj.retx() == self._row \
-                and obj.rety() + 1 == self._col or obj.retx() == self._row and \
-                obj.rety() + 2 == self._col or obj.retx() + 1 == self._row and \
-                obj.rety() == self._col or obj.retx() + 1 == self._row and obj.rety()\
-                + 1 == self._col or obj.retx() + 1 == self._row and obj.rety() +\
-                2 == self._col or obj.retx() + 2 == self._row and obj.rety() ==\
-                self._col or obj.retx() + 2 == self._row and obj.rety() + 1 == \
-                self._col or obj.retx() + 2 == self._row and obj.rety() + 2 ==\
-                self._col:
-            self._visibility = False
-            return 1
-        return 0
-
         
 class Defaults:
     """has all the default values"""
 
     def __init__(self):
-        self.__miny = 0
-        self.__miny1 = 0
-        self.__minx = 1
-        self.__maxy = 87
-        self.__maxy1 = 87
-        self.__maxx = 20
-        self.__start = 0
-        self.__time= time.time()
+        self.miny = 0
+        self.miny1 = 0
+        self.minx = 1
+        self.maxy = 87
+        self.maxy1 = 87
+        self.maxx = 20
+        self.maxtime = "3:00"
+        self.start = 0
+        self.time= time.time()
 
     def update(self, x):
-        self.__maxy = self.__maxy1 + x
-        self.__miny = self.__miny1 + x
-        self.__start = x
-
-    def retstart(self):
-        return self.__start
-
-    def retmaxx(self):
-        return self.__maxx
-
-    def retmaxy(self):
-        return self.__maxy
-
-    def retminx(self):
-        return self.__minx
-
-    def retminy(self):
-        return self.__miny
-
-    def rettime(self):
-        return self.__time
+        self.maxy = self.maxy1 + x
+        self.miny = self.miny1 + x
+        self.start = x
 
 
 objdef = Defaults()
